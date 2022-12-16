@@ -270,7 +270,9 @@ if [ -f trace_output.P ]; then
     if [ -f metric.P ]; then
 	cat metric.P >> trace_output.P
     fi
-    $MULVALROOT/bin/attack_graph $ATTACK_GRAPH_OPTS trace_output.P > $output_file.txt
+    # $MULVALROOT/bin/attack_graph $ATTACK_GRAPH_OPTS trace_output.P > $output_file.txt
+    # $MULVALROOT/bin/attack_graph $ATTACK_GRAPH_OPTS -o $output_file.test.csv trace_output.P > $output_file.txt
+    $MULVALROOT/bin/attack_graph $ATTACK_GRAPH_OPTS -o $output_file.txt trace_output.P
     if [ "$?" -ne "0" ]; then exit 1; fi
 
     if test -n "$CSVOutput"

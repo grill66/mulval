@@ -79,6 +79,10 @@ bool useMetrics=false;
 bool useRuleMetrics=false;
 bool displayMetric=true;
 
+#define MAXIMUM_PATH_LEN 512
+FILE* out_fp;
+char output_path[MAXIMUM_PATH_LEN] = {0, };
+
 metric_map mp[] = {
   {"certain", 1},
   {"likely",  .8},
@@ -710,16 +714,20 @@ void LeafNode::Render(renderMode mode, int indent)
 void Arc::Render(arcLabelMode mode){
   switch(mode){
   case WEIGHT:
-    cout << src->nodeNum << "," << dst->nodeNum << "," << weight << endl;
+    fprintf(out_fp, "%d,%d,%d\n", src->nodeNum, dst->nodeNum, weight);
+    // cout << src->nodeNum << "," << dst->nodeNum << "," << weight << endl;
     break;
   case NUMBER:
-    cout << src->nodeNum << "," << dst->nodeNum << ", E" << arcNum << endl;
+    fprintf(out_fp, "%d,%d, E%d\n", src->nodeNum, dst->nodeNum, arcNum);
+    // cout << src->nodeNum << "," << dst->nodeNum << ", E" << arcNum << endl;
     break;
   case METRICMODE:
-    cout << src->nodeNum << "," << dst->nodeNum << "," << metric << endl;
+    fprintf(out_fp, "%d,%d,%g\n", src->nodeNum, dst->nodeNum, metric);
+    // cout << src->nodeNum << "," << dst->nodeNum << "," << metric << endl;
     break;
   case NONE:
-    cout << src->nodeNum << "," << dst->nodeNum << "," << endl;
+    fprintf(out_fp, "%d,%d,\n", src->nodeNum, dst->nodeNum);  
+    // cout << src->nodeNum << "," << dst->nodeNum << "," << endl;
   }
 }
 
@@ -959,10 +967,12 @@ void OrNode::outputVertex( string description, float metric )
     if (metric < 0){
       metric = 0;
     }
-    cout << nodeNum << ",\"" << description << "\",\"OR\"," << metric << endl;
+    fprintf(out_fp, "%d,\"%s\",\"OR\",%g\n", nodeNum, description.c_str(), metric);
+    // cout << nodeNum << ",\"" << description << "\",\"OR\"," << metric << endl;
   }
   else{
-    cout << nodeNum << ",\"" << description << "\",\"OR\"" << endl;
+    fprintf(out_fp, "%d,\"%s\",\"OR\",%g\n", nodeNum, description.c_str(), metric);
+    // cout << nodeNum << ",\"" << description << "\",\"OR\"" << endl;
   }
   return;
 }
@@ -970,10 +980,12 @@ void OrNode::outputVertex( string description, float metric )
 void AndNode::outputVertex( string description, float metric )
 {
   if (displayMetric){
-    cout << nodeNum << ",\"" << description << "\",\"AND\"," << metric << endl;
+    fprintf(out_fp, "%d,\"%s\",\"AND\",%g\n", nodeNum, description.c_str(), metric);
+    // cout << nodeNum << ",\"" << description << "\",\"AND\"," << metric << endl;
   }
   else{
-    cout << nodeNum << ",\"" << description << "\",\"AND\"" << endl;
+    fprintf(out_fp, "%d,\"%s\",\"AND\",%g\n", nodeNum, description.c_str(), metric);
+    // cout << nodeNum << ",\"" << description << "\",\"AND\"" << endl;
   }
   return;
 }
@@ -984,10 +996,12 @@ void LeafNode::outputVertex( string description, float metric )
     if (metric < 0){
       metric = 1;
     }
-    cout << nodeNum << ",\"" << description << "\",\"LEAF\"," << metric << endl;
+    fprintf(out_fp, "%d,\"%s\",\"LEAF\",%g\n", nodeNum, description.c_str(), metric);
+    // cout << nodeNum << ",\"" << description << "\",\"LEAF\"," << metric << endl;
   }
   else{
-    cout << nodeNum << ",\"" << description << "\",\"LEAF\"" << endl;
+    fprintf(out_fp, "%d,\"%s\",\"LEAF\",%g\n", nodeNum, description.c_str(), metric);
+    // cout << nodeNum << ",\"" << description << "\",\"LEAF\"" << endl;
   }
   return;
 }
@@ -1082,6 +1096,10 @@ void process_args(int argc, char *argv[]){
       else if(!strcmp(argv[i], "-nm")){
 	displayMetric = false;
       }
+      else if(!strcmp(argv[i], "-o")){        
+        memset(output_path, 0, MAXIMUM_PATH_LEN);
+        strncpy(output_path, argv[++i], MAXIMUM_PATH_LEN);
+      }      
       else{
 	print_usage();
       }
@@ -1289,6 +1307,13 @@ int build_graph(void)
 
 int build_visual(bool arc_and_node)
 {
+  out_fp = fopen(output_path, "w");
+
+  if (out_fp == NULL) {
+    fprintf(stderr, "file open fail (%s)\n", output_path);
+    return -1;
+  }
+
   NodeMap::iterator k;
   for (k = data.goals.begin(); k != data.goals.end(); k++) {
     string fact_key = k->first;
@@ -1306,6 +1331,7 @@ int build_visual(bool arc_and_node)
     }
   }
   
+  fclose(out_fp);
   return 0;
 }
 
